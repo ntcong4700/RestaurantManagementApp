@@ -1,9 +1,12 @@
 package models
 
-import "time"
+import (
+	"time"
+	"uuid"
+)
 
 type Payment struct {
-	ID uint32 `gorm:"primary_key;AUTO_INCREMENT"`
+	ID uuid.UUID `gorm:"primary_key;AUTO_INCREMENT"`
 
 	BillID uint32 `gorm:"not null"`
 	Bill   Bill   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`

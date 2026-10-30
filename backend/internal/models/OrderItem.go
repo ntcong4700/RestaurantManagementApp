@@ -1,7 +1,9 @@
 package models
 
+import "uuid"
+
 type OrderItem struct {
-	ID uint32 `gorm:"primary_key;AUTO_INCREMENT"`
+	ID uuid.UUID `gorm:"primary_key;AUTO_INCREMENT"`
 
 	OrderID uint32 `gorm:"not null; index"`
 	Order   Order  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`

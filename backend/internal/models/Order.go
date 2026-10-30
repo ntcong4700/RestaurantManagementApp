@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"time"
+	"uuid"
+)
 
 const (
 	OrderStatusOpen  = "open"
@@ -9,7 +12,7 @@ const (
 )
 
 type Order struct {
-	ID uint32 `gorm:"primary_key;AUTO_INCREMENT"`
+	ID uuid.UUID `gorm:"primary_key;AUTO_INCREMENT"`
 
 	TableID uint32 `gorm:"not null"`
 	Table   Tables `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
