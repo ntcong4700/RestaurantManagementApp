@@ -2,7 +2,8 @@ package models
 
 import (
 	"time"
-	"uuid"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -12,14 +13,14 @@ const (
 )
 
 type Order struct {
-	ID uuid.UUID `gorm:"primary_key;AUTO_INCREMENT"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;"`
 
-	TableID uint32 `gorm:"not null"`
-	Table   Tables `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	TableID uuid.UUID `gorm:"not null"`
+	Table   Tables    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
-	Status   string     `gorm:"not null;default:open"`
-	CreateAt time.Time  `gorm:"not null"`
-	ClosedAt *time.Time `gorm:"not null"`
+	Status    string    `gorm:"not null;default:open"`
+	CreatedAt time.Time `gorm:"not null;autoCreateTime"`
+	ClosedAt  *time.Time
 
 	Bills      []Bill      `gorm:"foreignkey:OrderID"`
 	OrderItems []OrderItem `gorm:"foreignkey:OrderID"`

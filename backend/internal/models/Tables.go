@@ -9,7 +9,7 @@ const (
 )
 
 type Tables struct {
-	ID          uuid.UUID `gorm:"primary_key,AUTO_INCREMENT"`
-	TableNumber string    `gorm:"not null; uniqueIndex"`
-	Status      bool      `gorm:"not null;default:available"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;"`
+	TableNumber int       `gorm:"not null; uniqueIndex"`
+	Status      string    `gorm:"not null;default:available"`
 }

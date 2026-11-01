@@ -1,9 +1,9 @@
 package models
 
-import "uuid"
+import "github.com/google/uuid"
 
 type MenuItem struct {
-	ID       uuid.UUID `gorm:"primary_key;AUTO_INCREMENT"`
+	ID       uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Name     string    `gorm:"not null"`
 	Category string    `gorm:"not null"`
 	Price    float32   `gorm:"not null; check:price > 0"`

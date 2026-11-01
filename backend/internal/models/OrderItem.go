@@ -1,18 +1,18 @@
 package models
 
-import "uuid"
+import "github.com/google/uuid"
 
 type OrderItem struct {
-	ID uuid.UUID `gorm:"primary_key;AUTO_INCREMENT"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;"`
 
-	OrderID uint32 `gorm:"not null; index"`
-	Order   Order  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	OrderID uuid.UUID `gorm:"not null; index"`
+	Order   Order     `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
-	MenuItemID uint32   `gorm:"not null"`
-	MenuItem   MenuItem `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	MenuItemID uuid.UUID `gorm:"not null"`
+	MenuItem   MenuItem  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
 	Quantity uint32 `gorm:"not null; check:quantity > 0"`
 
-	BillID *uint32 `gorm:"not null"`
-	Bill   *Bill   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	BillID *uuid.UUID
+	Bill   *Bill `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 }

@@ -6,10 +6,10 @@ import (
 )
 
 type Payment struct {
-	ID uuid.UUID `gorm:"primary_key;AUTO_INCREMENT"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;"`
 
-	BillID uint32 `gorm:"not null"`
-	Bill   Bill   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	BillID uuid.UUID `gorm:"not null"`
+	Bill   Bill      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
 	Amount float32 `gorm:"not null; check:amount>0"`
 	PaidAt time.Time
