@@ -1,7 +1,8 @@
 package router
 
 import (
-	"net/http"
+	"restaurant-management-app/backend/internal/controller"
+	"restaurant-management-app/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -10,16 +11,16 @@ import (
 func NewRouter(db *gorm.DB) *gin.Engine {
 	router := gin.Default()
 
-	v1 := router.Group("/v1")
+	tableService := service.NewTableService(db)
+	tableController := controller.NewTableController(tableService)
+
+	public := router.Group("/api")
 	{
-		v1.GET("/ping", Helloworld)
-
+		public.POST("/tables", tableController.CreateTable)
+		public.GET("/tables", tableController.GetTables)
+		public.PUT("/tables/:id", tableController.UpdateTable)
+		public.DELETE("/tables/:id", tableController.DeleteTable)
 	}
-	return router
-}
 
-func Helloworld(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello World",
-	})
+	return router
 }

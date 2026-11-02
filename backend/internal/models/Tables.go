@@ -1,6 +1,6 @@
 package models
 
-import "uuid"
+import "github.com/google/uuid"
 
 const (
 	TableStatusAvailable = "available"
