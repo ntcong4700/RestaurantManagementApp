@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"restaurant-management-app/backend/internal/models"
 
 	"gorm.io/gorm"
@@ -39,8 +40,15 @@ func (t *TableService) UpdateTables(table models.Tables) (*models.Tables, error)
 }
 
 func (t *TableService) DeleteTable(tableID string) error {
-	if err := t.DB.Where("id = ?", tableID).Delete(&models.Tables{}).Error; err != nil {
-		return err
+	//if err := t.DB.Where("id = ?", tableID).Delete(&models.Tables{}).Error; err != nil {
+	//return err
+	//return nil
+	result := t.DB.Where("id = ?", tableID).Delete(&models.Tables{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("Table not found")
 	}
 	return nil
 }
