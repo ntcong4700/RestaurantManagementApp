@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
-	config2 "restaurant-management-app/backend/cmd/config"
-	router2 "restaurant-management-app/backend/internal/router"
+	config2 "restaurant-management-app/cmd/config"
+	router2 "restaurant-management-app/internal/router"
 )
 
 func main() {

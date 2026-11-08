@@ -1,8 +1,8 @@
 package router
 
 import (
-	"restaurant-management-app/backend/internal/controller"
-	"restaurant-management-app/backend/internal/service"
+	"restaurant-management-app/internal/controller"
+	"restaurant-management-app/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"restaurant-management-app/backend/internal/models"
+	"restaurant-management-app/internal/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

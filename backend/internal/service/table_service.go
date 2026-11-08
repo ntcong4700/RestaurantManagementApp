@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"restaurant-management-app/backend/internal/models"
+	"restaurant-management-app/internal/models"
 
 	"gorm.io/gorm"
 )

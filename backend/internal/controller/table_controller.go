@@ -2,8 +2,8 @@ package controller
 
 import (
 	"net/http"
-	"restaurant-management-app/backend/internal/models"
-	"restaurant-management-app/backend/internal/service"
+	"restaurant-management-app/internal/models"
+	"restaurant-management-app/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
