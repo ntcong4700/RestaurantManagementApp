@@ -19,11 +19,11 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 	config := &Config{
-		DBHost:     viper.GetString("DBHost"),
-		DBPort:     viper.GetInt("DBPort"),
-		DBUser:     viper.GetString("DBUser"),
-		DBPassword: viper.GetString("DBPassword"),
-		DBName:     viper.GetString("DBName"),
+		DBHost:     viper.GetString("DB_HOST"),
+		DBPort:     viper.GetInt("DB_PORT"),
+		DBUser:     viper.GetString("DB_USERNAME"),
+		DBPassword: viper.GetString("DB_PASSWORD"),
+		DBName:     viper.GetString("DB_NAME"),
 	}
 	return config, nil
 }
