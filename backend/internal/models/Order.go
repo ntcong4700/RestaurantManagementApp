@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	OrderStatusOpen  = "open"
-	OrderStatusClose = "close"
-	OrderStatusPaid  = "paid"
+	OrderStatusOpen = "open"
+	OrderStatusPaid = "paid"
 )
 
 type Order struct {

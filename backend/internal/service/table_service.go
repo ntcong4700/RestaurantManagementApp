@@ -24,7 +24,7 @@ func (t *TableService) CreateTable(table models.Tables) (*models.Tables, error) 
 	return &table, nil
 }
 
-func (t *TableService) GetTable() ([]*models.Tables, error) {
+func (t *TableService) GetAllTable() ([]*models.Tables, error) {
 	var tables []*models.Tables
 	if err := t.DB.Find(&tables).Error; err != nil {
 		return nil, err

@@ -17,7 +17,7 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 	public := router.Group("/api")
 	{
 		public.POST("/tables", tableController.CreateTable)
-		public.GET("/tables", tableController.GetTables)
+		public.GET("/getalltables", tableController.GetAllTables)
 		public.PUT("/tables/:id", tableController.UpdateTable)
 		public.DELETE("/tables/:id", tableController.DeleteTable)
 	}

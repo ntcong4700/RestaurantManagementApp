@@ -20,8 +20,7 @@ func NewTableController(tableService *service.TableService) *TableController {
 }
 
 type CreateTableRequest struct {
-	TableNumber int    `json:"table_number" binding:"required"`
-	Status      string `json:"status" binding:"required"`
+	TableNumber int `json:"table_number" binding:"required"`
 }
 
 func (tc *TableController) CreateTable(c *gin.Context) {
@@ -32,7 +31,7 @@ func (tc *TableController) CreateTable(c *gin.Context) {
 	}
 
 	table := models.Tables{
-		Status:      req.Status,
+		Status:      models.TableStatusAvailable,
 		TableNumber: req.TableNumber,
 		ID:          uuid.New(),
 	}
@@ -44,8 +43,8 @@ func (tc *TableController) CreateTable(c *gin.Context) {
 	c.JSON(http.StatusCreated, createdTable)
 }
 
-func (tc *TableController) GetTables(c *gin.Context) {
-	tables, err := tc.TableService.GetTable()
+func (tc *TableController) GetAllTables(c *gin.Context) {
+	tables, err := tc.TableService.GetAllTable()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
