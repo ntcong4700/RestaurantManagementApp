@@ -4,6 +4,7 @@ import (
 	"errors"
 	"restaurant-management-app/internal/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -39,7 +40,7 @@ func (t *TableService) UpdateTables(table models.Tables) (*models.Tables, error)
 	return &table, nil
 }
 
-func (t *TableService) DeleteTable(tableID string) error {
+func (t *TableService) DeleteTable(tableID uuid.UUID) error {
 	//if err := t.DB.Where("id = ?", tableID).Delete(&models.Tables{}).Error; err != nil {
 	//return err
 	//return nil

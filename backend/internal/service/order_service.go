@@ -38,7 +38,7 @@ func (os *OrderService) Update(order models.Order) (*models.Order, error) {
 	return &order, nil
 }
 
-func (os *OrderService) DeleteOrder(orderID string) error {
+func (os *OrderService) DeleteOrder(orderID uuid.UUID) error {
 	result := os.DB.Where("id = ?", orderID).Delete(&models.Tables{})
 	if result.Error != nil {
 		return result.Error
