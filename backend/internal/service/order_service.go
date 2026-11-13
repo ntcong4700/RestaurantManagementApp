@@ -49,7 +49,7 @@ func (os *OrderService) DeleteOrder(orderID uuid.UUID) error {
 	return nil
 }
 
-func (os *OrderService) GetOrderById(orderID uuid.UUID) (*models.Order, error) {
+func (os *OrderService) GetOrderById(orderID string) (*models.Order, error) {
 	var order models.Order
 	if err := os.DB.Where("id = ?", orderID).Find(&order).Error; err != nil {
 		return nil, err

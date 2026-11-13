@@ -49,7 +49,7 @@ func (ms *MenuItemService) DeleteItems(itemID uuid.UUID) error {
 	return nil
 }
 
-func (ms *MenuItemService) GetMenuItemByID(itemID uuid.UUID) (*models.MenuItem, error) {
+func (ms *MenuItemService) GetMenuItemByID(itemID string) (*models.MenuItem, error) {
 	var item *models.MenuItem
 	result := ms.DB.Where("id = ?", itemID).Find(&item)
 	if result.Error != nil {

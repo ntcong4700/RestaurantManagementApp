@@ -26,7 +26,7 @@ type CreateOrderRequest struct {
 	TableID uuid.UUID `json:"table_id" binding:"required"`
 }
 
-func (oc *OrderController) Create(c *gin.Context) {
+func (oc *OrderController) CreateOrder(c *gin.Context) {
 	var req CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -57,15 +57,8 @@ func (oc *OrderController) GetAllOrders(c *gin.Context) {
 func (oc *OrderController) GetOrderByID(c *gin.Context) {
 	orderID := c.Param("id")
 
-	parsedID, err := uuid.Parse(orderID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid order ID",
-		})
-		return
-	}
+	order, err := oc.OrderService.GetOrderById(orderID)
 
-	order, err := oc.OrderService.GetOrderById(parsedID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
