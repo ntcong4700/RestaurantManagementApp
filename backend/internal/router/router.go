@@ -8,8 +8,21 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewRouter(db *gorm.DB) *gin.Engine {
-	router := gin.Default()
+func NewRouter(db *gorm.DB, corsAllowedOrigins []string) *gin.Engine {
+	router := gin.New()
+	router.Use(
+		// Health checks run every few seconds; keep them out of the access log.
+		gin.LoggerWithConfig(gin.LoggerConfig{SkipPaths: []string{"/health", "/health/ready"}}),
+		gin.Recovery(),
+	)
+	// Not behind a reverse proxy: use the real remote address as client IP
+	// instead of trusting X-Forwarded-For from anyone.
+	if err := router.SetTrustedProxies(nil); err != nil {
+		panic(err)
+	}
+	if len(corsAllowedOrigins) > 0 {
+		router.Use(corsMiddleware(corsAllowedOrigins))
+	}
 
 	tableController := controller.NewTableController(service.NewTableService(db))
 	menuItemController := controller.NewMenuItemController(service.NewMenuItemsService(db))
@@ -17,6 +30,10 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 	orderItemController := controller.NewOrderItemController(service.NewOrderItemService(db))
 	billController := controller.NewBillController(service.NewBillService(db))
 	paymentController := controller.NewPaymentController(service.NewPaymentService(db))
+	healthController := controller.NewHealthController(db)
+
+	router.GET("/health", healthController.Live)
+	router.GET("/health/ready", healthController.Ready)
 
 	api := router.Group("/api")
 	{

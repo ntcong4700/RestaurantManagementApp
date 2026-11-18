@@ -22,7 +22,8 @@ backend/
 │   ├── service/       # business logic
 │   ├── controller/    # HTTP handlers (Gin)
 │   └── router/        # khai báo route
-└── docker-compose.yml # PostgreSQL
+├── Dockerfile         # build image cho Go backend
+└── docker-compose.yml # PostgreSQL + backend
 data/                  # volume dữ liệu Postgres (bị git ignore)
 ```
 
@@ -36,27 +37,58 @@ DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=your_password
 DB_NAME=restaurant
+
+# Tuỳ chọn
+PORT=8080
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 File này đã nằm trong `.gitignore`, đừng commit nó.
 
-### 2. Khởi động database
+| Biến | Bắt buộc | Mặc định | Ý nghĩa |
+|------|----------|----------|---------|
+| `DB_HOST` | | `localhost` | Host Postgres |
+| `DB_PORT` | | `5432` | Cổng Postgres |
+| `DB_USERNAME` | ✔ | | User Postgres |
+| `DB_PASSWORD` | | | Mật khẩu Postgres |
+| `DB_NAME` | ✔ | | Tên database |
+| `PORT` | | `8080` | Cổng HTTP của server (khi chạy `go run`) |
+| `APP_PORT` | | `8080` | Cổng phía host map vào backend khi chạy bằng Docker Compose |
+| `CORS_ALLOWED_ORIGINS` | | *(trống = tắt CORS)* | Danh sách origin cách nhau bởi dấu phẩy, hoặc `*` cho mọi origin |
+
+Có thể không cần file `.env`: biến môi trường của hệ thống/Docker được đọc trực tiếp và **ưu tiên hơn** giá trị trong `.env`.
+
+### 2a. Chạy toàn bộ bằng Docker (database + backend)
 
 ```bash
 cd backend
-docker compose up -d
+docker compose up -d --build
 ```
 
-Dữ liệu được lưu ở thư mục `data/` ngoài thư mục gốc.
+- Backend chạy ở `http://localhost:8080` (đổi cổng phía host bằng `APP_PORT` trong `.env`).
+- Backend chờ database báo healthy rồi mới khởi động, và kết nối tới DB qua tên service `database`. `DB_HOST`/`DB_PORT` trong `.env` chỉ dùng khi chạy Go trực tiếp trên máy, compose tự ghi đè bên trong container.
+- File `.env` **không** được copy vào image (`.dockerignore`); compose đọc nó và truyền vào container dưới dạng biến môi trường.
+- Dữ liệu Postgres được lưu ở thư mục `data/` ngoài thư mục gốc.
 
-### 3. Chạy server
+Lệnh hay dùng:
 
 ```bash
-cd backend          # bắt buộc: .env được đọc theo thư mục hiện tại
-go run ./cmd/server
+docker compose logs -f backend      # xem log
+docker compose up -d --build backend  # build lại sau khi sửa code
+docker compose down                 # dừng tất cả (dữ liệu trong data/ vẫn giữ)
 ```
 
-Server chạy ở `http://localhost:8080`, đổi được cổng qua biến môi trường `PORT`. Khi khởi động, bảng được tạo/cập nhật tự động bằng `AutoMigrate`.
+### 2b. Hoặc chạy Go trực tiếp khi dev
+
+```bash
+cd backend
+docker compose up -d database   # chỉ chạy database
+go run ./cmd/server             # chạy trong thư mục backend: .env được đọc theo thư mục hiện tại
+```
+
+Server chạy ở `http://localhost:8080` (đổi bằng `PORT`). Khi khởi động, bảng được tạo/cập nhật tự động bằng `AutoMigrate`.
+
+Khi nhận Ctrl+C hoặc `SIGTERM` (`docker stop`), server ngừng nhận request mới, chờ tối đa 10 giây cho các request đang chạy hoàn tất, rồi đóng kết nối DB.
 
 ## Mô hình dữ liệu
 
@@ -111,6 +143,17 @@ Service trả về các lỗi sentinel (khai báo trong package `service`) để
 | `ErrTableHasOpenOrder`, `ErrOrderNotOpen`, `ErrOrderItemBilled`, `ErrOrderHasItems`, `ErrBillHasPayments`, `ErrBillAlreadyPaid`, `ErrOverpayment`, `ErrNoItemsToBill`, `ErrTableStatusManaged` | 409 |
 
 ## API
+
+### Health check
+
+| Method | Path            | Mô tả |
+|--------|-----------------|-------|
+| GET    | `/health`       | Server còn sống: luôn `200 {"status":"ok"}`, không chạm DB |
+| GET    | `/health/ready` | Server kết nối được DB: `200` nếu ping DB thành công, `503` nếu không (timeout 2 giây) |
+
+Image Docker có sẵn `HEALTHCHECK` (gọi `/app/server healthcheck`, tức `/health/ready`, mỗi 30 giây), nên `docker ps` sẽ hiện `healthy`/`unhealthy`. Hai đường dẫn này không được ghi vào access log.
+
+### Nghiệp vụ
 
 Prefix: `/api`. Body và response đều là JSON, tên trường dạng `snake_case`. ID là UUID; ID sai định dạng trả `400`.
 

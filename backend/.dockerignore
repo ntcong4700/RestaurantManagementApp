@@ -1,0 +1,20 @@
+# Secrets: configuration is passed as environment variables by docker compose
+.env
+.env.*
+
+# VCS / editor
+.git
+.gitignore
+.idea
+.vscode
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Build / test artifacts
+*.test
+*.out
+coverage.*
+tests/
