@@ -1,0 +1,17 @@
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type Payment struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;"`
+
+	BillID uuid.UUID `gorm:"not null"`
+	Bill   Bill      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+
+	Amount float32 `gorm:"not null; check:amount>0"`
+	PaidAt time.Time
+}
