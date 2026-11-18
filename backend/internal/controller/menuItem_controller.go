@@ -1,13 +1,11 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 	"restaurant-management-app/internal/models"
 	"restaurant-management-app/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type MenuItemController struct {
@@ -21,132 +19,113 @@ func NewMenuItemController(menuItemService *service.MenuItemService) *MenuItemCo
 }
 
 type CreateMenuItemRequest struct {
-	ItemNumber uint    `json:"item_number" validate:"required"`
+	ItemNumber uint    `json:"item_number" binding:"required"`
 	Name       string  `json:"name" binding:"required"`
 	Category   string  `json:"category" binding:"required"`
-	Price      float32 `json:"price" binding:"required"`
+	Price      float32 `json:"price" binding:"required,gt=0"`
 }
 
 func (mc *MenuItemController) CreateItem(c *gin.Context) {
 	var req CreateMenuItemRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !bindJSON(c, &req) {
+		return
 	}
-	item := models.MenuItem{
-		ID:         uuid.New(),
+
+	createdItem, err := mc.MenuItemService.CreateMenuItem(models.MenuItem{
+		ItemNumber: req.ItemNumber,
 		Name:       req.Name,
 		Category:   req.Category,
 		Price:      req.Price,
-		ItemNumber: req.ItemNumber,
-	}
-	createdItem, err := mc.MenuItemService.CreateMenuItem(item)
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, err)
+		return
 	}
 	c.JSON(http.StatusCreated, createdItem)
 }
 
 func (mc *MenuItemController) GetMenuItemById(c *gin.Context) {
-	id := c.Param("id")
-	item, err := mc.MenuItemService.GetMenuItemByID(id)
-
-	if err != nil {
-		if errors.Is(err, service.ErrMenuItemNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Item not found",
-			})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve order",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, item)
-}
-
-func (mc *MenuItemController) GetMenuItemList(c *gin.Context) {
-	item, err := mc.MenuItemService.GetAllItems()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
-	c.JSON(http.StatusOK, item)
-}
-
-type UpdateMenuItemRequest struct {
-	ItemNumber *uint    `json:"item_number" validate:"required"`
-	Name       *string  `json:"name" binding:"required"`
-	Category   *string  `json:"category" binding:"required"`
-	Price      *float32 `json:"price" binding:"required"`
-}
-
-func (mc *MenuItemController) UpdateItem(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid menu item ID",
-		})
-		return
-	}
-
-	var req UpdateMenuItemRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	if req.ItemNumber == nil &&
-		req.Name == nil &&
-		req.Category == nil &&
-		req.Price == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "No fields provided for update",
-		})
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	item, err := mc.MenuItemService.GetMenuItemByID(id.String())
 	if err != nil {
-		if errors.Is(err, service.ErrMenuItemNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Menu item not found",
-			})
-			return
-		}
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, item)
+}
 
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve menu item",
-		})
+func (mc *MenuItemController) GetMenuItemList(c *gin.Context) {
+	items, err := mc.MenuItemService.GetAllItems()
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, items)
+}
+
+// UpdateMenuItemRequest is a partial update: only the fields sent are changed.
+type UpdateMenuItemRequest struct {
+	ItemNumber *uint    `json:"item_number" binding:"omitempty,gt=0"`
+	Name       *string  `json:"name" binding:"omitempty,min=1"`
+	Category   *string  `json:"category" binding:"omitempty,min=1"`
+	Price      *float32 `json:"price" binding:"omitempty,gt=0"`
+}
+
+func (mc *MenuItemController) UpdateItem(c *gin.Context) {
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+
+	var req UpdateMenuItemRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+	if req.ItemNumber == nil && req.Name == nil && req.Category == nil && req.Price == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no fields provided for update"})
+		return
+	}
+
+	item, err := mc.MenuItemService.GetMenuItemByID(id.String())
+	if err != nil {
+		respondError(c, err)
 		return
 	}
 
 	if req.ItemNumber != nil {
 		item.ItemNumber = *req.ItemNumber
 	}
-
 	if req.Name != nil {
 		item.Name = *req.Name
 	}
-
 	if req.Category != nil {
 		item.Category = *req.Category
 	}
-
 	if req.Price != nil {
 		item.Price = *req.Price
 	}
 
 	updatedItem, err := mc.MenuItemService.UpdateItems(*item)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update menu item",
-		})
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, updatedItem)
+}
+
+func (mc *MenuItemController) DeleteItem(c *gin.Context) {
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	c.JSON(http.StatusOK, updatedItem)
+	if err := mc.MenuItemService.DeleteItems(id); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

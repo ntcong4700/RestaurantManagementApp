@@ -20,7 +20,7 @@ func NewTableController(tableService *service.TableService) *TableController {
 }
 
 type CreateTableRequest struct {
-	TableNumber int `json:"table_number" binding:"required"`
+	TableNumber int `json:"table_number" binding:"required,gt=0"`
 }
 
 func (tc *TableController) CreateTable(c *gin.Context) {
@@ -37,7 +37,7 @@ func (tc *TableController) CreateTable(c *gin.Context) {
 	}
 	createdTable, err := tc.TableService.CreateTable(table)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, createdTable)
@@ -46,15 +46,15 @@ func (tc *TableController) CreateTable(c *gin.Context) {
 func (tc *TableController) GetAllTables(c *gin.Context) {
 	tables, err := tc.TableService.GetAllTable()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, tables)
 }
 
 type UpdateTableRequest struct {
-	TableNumber int    `json:"table_number" binding:"required"`
-	Status      string `json:"status" binding:"required"`
+	TableNumber int    `json:"table_number" binding:"required,gt=0"`
+	Status      string `json:"status" binding:"required,oneof=available occupied reserved"`
 }
 
 func (tc *TableController) UpdateTable(c *gin.Context) {
@@ -77,16 +77,19 @@ func (tc *TableController) UpdateTable(c *gin.Context) {
 	}
 	updatedTable, err := tc.TableService.UpdateTables(table)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, updatedTable)
 }
 
 func (tc *TableController) DeleteTable(c *gin.Context) {
-	id := c.Param("id")
-	if err := tc.TableService.DeleteTable(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+	if err := tc.TableService.DeleteTable(id.String()); err != nil {
+		respondError(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)

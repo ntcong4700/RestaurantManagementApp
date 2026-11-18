@@ -1,11 +1,9 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 	"restaurant-management-app/internal/models"
 	"restaurant-management-app/internal/service"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -27,18 +25,13 @@ type CreateOrderRequest struct {
 
 func (oc *OrderController) CreateOrder(c *gin.Context) {
 	var req CreateOrderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !bindJSON(c, &req) {
 		return
 	}
-	order := models.Order{
-		TableID:   req.TableID,
-		Status:    models.OrderStatusOpen,
-		CreatedAt: time.Now(),
-	}
-	createdOrder, err := oc.OrderService.CreateOrder(order)
+
+	createdOrder, err := oc.OrderService.CreateOrder(models.Order{TableID: req.TableID})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, createdOrder)
@@ -47,30 +40,36 @@ func (oc *OrderController) CreateOrder(c *gin.Context) {
 func (oc *OrderController) GetAllOrders(c *gin.Context) {
 	orders, err := oc.OrderService.GetAllOrders()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, orders)
 }
 
 func (oc *OrderController) GetOrderByID(c *gin.Context) {
-	orderID := c.Param("id")
-
-	order, err := oc.OrderService.GetOrderById(orderID)
-
-	if err != nil {
-		if errors.Is(err, service.ErrOrderNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Order not found",
-			})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve order",
-		})
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
+	order, err := oc.OrderService.GetOrderById(id.String())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, order)
+}
+
+// DeleteOrder removes an order that has no items yet (opened by mistake).
+func (oc *OrderController) DeleteOrder(c *gin.Context) {
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+
+	if err := oc.OrderService.DeleteOrder(id); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

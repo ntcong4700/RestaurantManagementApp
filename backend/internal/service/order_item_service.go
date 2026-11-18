@@ -43,13 +43,14 @@ func (s *OrderItemService) CreateOrderItem(orderItem models.OrderItem) (*models.
 			return err
 		}
 
-		var count int64
-		if err := tx.Model(&models.MenuItem{}).Where("id = ?", orderItem.MenuItemID).Count(&count).Error; err != nil {
+		var menuItem models.MenuItem
+		if err := tx.Select("id", "price").Where("id = ?", orderItem.MenuItemID).First(&menuItem).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrMenuItemNotFound
+			}
 			return err
 		}
-		if count == 0 {
-			return ErrMenuItemNotFound
-		}
+		orderItem.UnitPrice = menuItem.Price
 
 		return tx.Omit(clause.Associations).Create(&orderItem).Error
 	})
@@ -134,10 +135,23 @@ func ensureOrderOpen(tx *gorm.DB, orderID uuid.UUID) error {
 	return nil
 }
 
+// findEditableOrderItem locks the item's order first and only then reads the
+// item, so a bill created concurrently is always seen (no stale bill_id check).
 func findEditableOrderItem(tx *gorm.DB, id uuid.UUID) (*models.OrderItem, error) {
+	var ref models.OrderItem
+	if err := tx.Select("id", "order_id").Where("id = ?", id).First(&ref).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrOrderItemNotFound
+		}
+		return nil, err
+	}
+
+	if err := ensureOrderOpen(tx, ref.OrderID); err != nil {
+		return nil, err
+	}
+
 	var orderItem models.OrderItem
-	err := tx.Where("id = ?", id).First(&orderItem).Error
-	if err != nil {
+	if err := tx.Where("id = ?", id).First(&orderItem).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrOrderItemNotFound
 		}
@@ -145,9 +159,6 @@ func findEditableOrderItem(tx *gorm.DB, id uuid.UUID) (*models.OrderItem, error)
 	}
 	if orderItem.BillID != nil {
 		return nil, ErrOrderItemBilled
-	}
-	if err := ensureOrderOpen(tx, orderItem.OrderID); err != nil {
-		return nil, err
 	}
 	return &orderItem, nil
 }

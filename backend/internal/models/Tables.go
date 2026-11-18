@@ -9,7 +9,7 @@ const (
 )
 
 type Tables struct {
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey;"`
-	TableNumber int       `gorm:"not null; uniqueIndex"`
-	Status      string    `gorm:"not null;default:available"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;" json:"id"`
+	TableNumber int       `gorm:"not null; uniqueIndex" json:"table_number"`
+	Status      string    `gorm:"not null;default:available" json:"status"`
 }

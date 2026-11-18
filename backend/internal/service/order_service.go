@@ -74,18 +74,6 @@ func (os *OrderService) GetAllOrders() ([]models.Order, error) {
 	return orders, nil
 }
 
-// Update overwrites the editable columns of an existing order.
-func (os *OrderService) Update(order models.Order) (*models.Order, error) {
-	result := os.DB.Model(&order).Select("table_id", "status", "closed_at").Updates(&order)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	if result.RowsAffected == 0 {
-		return nil, ErrOrderNotFound
-	}
-	return os.GetOrderById(order.ID.String())
-}
-
 // DeleteOrder removes an order that has no items yet (e.g. opened by mistake)
 // and releases its table if the order was still open.
 func (os *OrderService) DeleteOrder(orderID uuid.UUID) error {

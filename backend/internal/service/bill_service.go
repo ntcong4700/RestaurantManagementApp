@@ -43,7 +43,7 @@ func (s *BillService) CreateBill(orderID uuid.UUID, orderItemIDs []uuid.UUID) (*
 		var items []models.OrderItem
 		// The order row is locked by ensureOrderOpen, so concurrent bills for
 		// the same order are serialized and cannot grab the same items.
-		query := tx.Preload("MenuItem")
+		query := tx
 
 		if len(orderItemIDs) == 0 {
 			if err := query.Where("order_id = ? AND bill_id IS NULL", orderID).Find(&items).Error; err != nil {
@@ -81,7 +81,7 @@ func (s *BillService) CreateBill(orderID uuid.UUID, orderItemIDs []uuid.UUID) (*
 		var total float32
 		ids := make([]uuid.UUID, 0, len(items))
 		for _, item := range items {
-			total += item.MenuItem.Price * float32(item.Quantity)
+			total += item.UnitPrice * float32(item.Quantity)
 			ids = append(ids, item.ID)
 		}
 

@@ -5,9 +5,13 @@ import (
 	"restaurant-management-app/internal/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-var ErrInvalidTableStatus = errors.New("invalid table status")
+var (
+	ErrInvalidTableStatus = errors.New("invalid table status")
+	ErrTableStatusManaged = errors.New("table status is managed by orders: a table with an open order must stay occupied, and occupied is only set by opening an order")
+)
 
 type TableService struct {
 	DB *gorm.DB
@@ -38,12 +42,31 @@ func (t *TableService) UpdateTables(table models.Tables) (*models.Tables, error)
 	if !isValidTableStatus(table.Status) {
 		return nil, ErrInvalidTableStatus
 	}
-	result := t.DB.Model(&table).Select("table_number", "status").Updates(&table)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	if result.RowsAffected == 0 {
-		return nil, ErrTableNotFound
+	err := t.DB.Transaction(func(tx *gorm.DB) error {
+		var current models.Tables
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", table.ID).First(&current).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTableNotFound
+			}
+			return err
+		}
+
+		var openOrders int64
+		if err := tx.Model(&models.Order{}).
+			Where("table_id = ? AND status = ?", table.ID, models.OrderStatusOpen).
+			Count(&openOrders).Error; err != nil {
+			return err
+		}
+		hasOpenOrder := openOrders > 0
+		if hasOpenOrder != (table.Status == models.TableStatusOccupied) {
+			return ErrTableStatusManaged
+		}
+
+		return tx.Model(&table).Select("table_number", "status").Updates(&table).Error
+	})
+	if err != nil {
+		return nil, err
 	}
 	return &table, nil
 }
