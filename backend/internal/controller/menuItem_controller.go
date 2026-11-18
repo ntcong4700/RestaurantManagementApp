@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type MenuItemController struct {
@@ -52,7 +51,7 @@ func (mc *MenuItemController) GetMenuItemById(c *gin.Context) {
 	item, err := mc.MenuItemService.GetMenuItemByID(id)
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, service.ErrMenuItemNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "Item not found",
 			})
@@ -112,7 +111,7 @@ func (mc *MenuItemController) UpdateItem(c *gin.Context) {
 
 	item, err := mc.MenuItemService.GetMenuItemByID(id.String())
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, service.ErrMenuItemNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "Menu item not found",
 			})

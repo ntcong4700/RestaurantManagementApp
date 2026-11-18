@@ -15,5 +15,6 @@ type Bill struct {
 	TotalAmount float32 `gorm:"not null; check:total_amount>0"`
 	CreatedAt   time.Time
 
-	Payments []Payment `gorm:"foreignkey:BillID"`
+	Payments   []Payment   `gorm:"foreignkey:BillID"`
+	OrderItems []OrderItem `gorm:"foreignkey:BillID"`
 }

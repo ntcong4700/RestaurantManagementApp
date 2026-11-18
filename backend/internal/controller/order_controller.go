@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type OrderController struct {
@@ -60,7 +59,7 @@ func (oc *OrderController) GetOrderByID(c *gin.Context) {
 	order, err := oc.OrderService.GetOrderById(orderID)
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, service.ErrOrderNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "Order not found",
 			})

@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var ErrInvalidTableStatus = errors.New("invalid table status")
+
 type TableService struct {
 	DB *gorm.DB
 }
@@ -33,22 +35,34 @@ func (t *TableService) GetAllTable() ([]*models.Tables, error) {
 }
 
 func (t *TableService) UpdateTables(table models.Tables) (*models.Tables, error) {
-	if err := t.DB.Save(&table).Error; err != nil {
-		return nil, err
+	if !isValidTableStatus(table.Status) {
+		return nil, ErrInvalidTableStatus
+	}
+	result := t.DB.Model(&table).Select("table_number", "status").Updates(&table)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, ErrTableNotFound
 	}
 	return &table, nil
 }
 
+func isValidTableStatus(status string) bool {
+	switch status {
+	case models.TableStatusAvailable, models.TableStatusOccupied, models.TableStatusReserved:
+		return true
+	}
+	return false
+}
+
 func (t *TableService) DeleteTable(tableID string) error {
-	//if err := t.DB.Where("id = ?", tableID).Delete(&models.Tables{}).Error; err != nil {
-	//return err
-	//return nil
 	result := t.DB.Where("id = ?", tableID).Delete(&models.Tables{})
 	if result.Error != nil {
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		return errors.New("Table not found")
+		return ErrTableNotFound
 	}
 	return nil
 }
